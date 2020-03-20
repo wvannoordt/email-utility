@@ -13,55 +13,72 @@ public class Program
 {
 	const bool DEBUG  = false;
 	const string PROGRAM_NAME = "sender";
+	static string host = "";
+	static string pass = "";
 	private static readonly int EXPECTED_ARGS = 4;
 	public static void Main(string[] args)
 	{
-		if (args.Length > 0)
+		if (!get_creds(out host, out pass))
 		{
-			if (args[0] != "-help")
+			Console.WriteLine("Error - credentials not found, please set using SENDER_HOST, SENDER_PASS");
+		}
+		else
+		{
+			if (args.Length > 0)
 			{
-				string signature, subject, body, error;
-				string[] attachments, addresses;
-				if (parse_args(args, out addresses, out signature, out subject, out body, out attachments, out error))
+				if (args[0] != "-help")
 				{
-					Console.WriteLine("Sending...");
-					if (DEBUG)
+					string signature, subject, body, error;
+					string[] attachments, addresses;
+					if (parse_args(args, out addresses, out signature, out subject, out body, out attachments, out error))
 					{
-						foreach (string address in addresses) Console.WriteLine(address);
-						Console.WriteLine(signature);
-						Console.WriteLine(subject);
-						Console.WriteLine(body);
-						foreach (string i in attachments) Console.WriteLine(i);
+						Console.WriteLine("Sending...");
+						if (DEBUG)
+						{
+							foreach (string address in addresses) Console.WriteLine(address);
+							Console.WriteLine(signature);
+							Console.WriteLine(subject);
+							Console.WriteLine(body);
+							foreach (string i in attachments) Console.WriteLine(i);
+						}
+						else
+						{
+							SendEmail(addresses, signature, subject, body, attachments);
+							Console.WriteLine("Sent.");
+						}
 					}
 					else
 					{
-						SendEmail(addresses, signature, subject, body, attachments);
-						Console.WriteLine("Sent.");
+						Console.WriteLine("Error: " + error);
+						ShowHelp();
 					}
 				}
 				else
 				{
-					Console.WriteLine("Error: " + error);
-					ShowHelp();
+					Console.WriteLine("Usage: sender [ADDRESS1:ADDRESS2:...] [SIGNATURE] [SUBJECT] [BODY] {-attach} {file1} {file2...}");
+					Console.WriteLine("[ADDRESS1:ADDRESS2:...]:   The target email addresses, separated by a colon, e.g. \"someone@example.com:someone2@example2.com\".");
+					Console.WriteLine("[SIGNATURE]:               The signature of the sender, to be displayed as a sender name, e.g. \"Automated Messenger\".");
+					Console.WriteLine("[SUBJECT]:                 The subject of the email, e.g. \"An Automated Message\".");
+					Console.WriteLine("[BODY]:                    The body of the email, e.g. \"Hello World!\".");
+					Console.WriteLine("{-attach} (optional):      Option to specify attachments.");
+					Console.WriteLine("{file1} (optional):        A file to attach.");
 				}
 			}
 			else
 			{
-				Console.WriteLine("Usage: sender [ADDRESS1:ADDRESS2:...] [SIGNATURE] [SUBJECT] [BODY] {-attach} {file1} {file2...}");
-				Console.WriteLine("[ADDRESS1:ADDRESS2:...]:   The target email addresses, separated by a colon, e.g. \"someone@example.com:someone2@example2.com\".");
-				Console.WriteLine("[SIGNATURE]:               The signature of the sender, to be displayed as a sender name, e.g. \"Automated Messenger\".");
-				Console.WriteLine("[SUBJECT]:                 The subject of the email, e.g. \"An Automated Message\".");
-				Console.WriteLine("[BODY]:                    The body of the email, e.g. \"Hello World!\".");
-				Console.WriteLine("{-attach} (optional):      Option to specify attachments.");
-				Console.WriteLine("{file1} (optional):        A file to attach.");
+				Console.WriteLine("Found 0 arguments, expecting 4 or more.");
+				ShowHelp();
 			}
 		}
-		else
-		{
-			Console.WriteLine("Found 0 arguments, expecting 4 or more.");
-			ShowHelp();
-		}
 	}
+	
+	public static bool get_creds(out string email, out string paswd)
+	{
+		email = Environment.GetEnvironmentVariable("SENDER_HOST");
+		paswd = Environment.GetEnvironmentVariable("SENDER_PASS");
+		return string.IsNullOrEmpty(email);
+	}
+	
 	public static bool parse_args(string[] args, out string[] target_addresses, out string signature, out string subject, out string body_contents, out string[] attachments, out string error)
 	{
 		target_addresses = new string[] {}; signature = ""; subject = ""; body_contents = ""; error = "NONE"; attachments = new string[]{};
@@ -118,9 +135,9 @@ public class Program
 		if (addresses.Length > 0)
 		{
 			//THIS WORKS!!!!!
-			var fromAddress = new MailAddress("wvnnotifier@gmail.com", signature);
+			var fromAddress = new MailAddress(host, signature);
 			var toAddress = new MailAddress(addresses[0]);
-			const string p = "please-notify-me";
+			string p = pass;
 
 			var smtp = new SmtpClient
 			{
