@@ -118,9 +118,9 @@ public class Program
 		if (addresses.Length > 0)
 		{
 			//THIS WORKS!!!!!
-			var fromAddress = new MailAddress("some.email@domain.com", signature);
+			var fromAddress = new MailAddress("wvnnotifier@gmail.com", signature);
 			var toAddress = new MailAddress(addresses[0]);
-			const string p = "insert-password-here";
+			const string p = "please-notify-me";
 
 			var smtp = new SmtpClient
 			{
