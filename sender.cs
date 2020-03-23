@@ -76,7 +76,7 @@ public class Program
 	{
 		email = Environment.GetEnvironmentVariable("SENDER_HOST");
 		paswd = Environment.GetEnvironmentVariable("SENDER_PASS");
-		return string.IsNullOrEmpty(email);
+		return !string.IsNullOrEmpty(email);
 	}
 	
 	public static bool parse_args(string[] args, out string[] target_addresses, out string signature, out string subject, out string body_contents, out string[] attachments, out string error)
@@ -91,6 +91,16 @@ public class Program
 		signature = args[1];
 		subject = args[2];
 		body_contents = args[3];
+		if (!parsebody(args[3], out body_contents))
+		{
+			error = "could not parse \"" + args[3] + "\".";
+			return false;
+		}
+		if (!parsebody(args[2], out subject))
+		{
+			error = "could not parse \"" + args[3] + "\".";
+			return false;
+		}
 		List<string> attch_list = new List<string>();
 		if (args.Length > EXPECTED_ARGS)
 		{
@@ -167,6 +177,37 @@ public class Program
 		{
 			Console.WriteLine("Error: no target addresses specified.");
 		}
+	}
+	public static bool parsebody(string input, out string output)
+	{
+		output = input;
+		if (input.StartsWith("-f"))
+		{
+			string filename = "";
+			for (int i = 2; i < input.Length; i++)
+			{
+				filename += input[i];
+			}
+			if (File.Exists(filename))
+			{
+				string message = "";
+				string[] contents = File.ReadAllLines(filename);
+				if (contents.Length > 0)
+				{
+					message = contents[0];
+					for (int p = 1; p < contents.Length; p++)
+					{
+						message += ("\n" + contents[p]);
+					}
+				}
+				output = message;
+			}
+			else
+			{
+				return false;
+			}
+		}
+		return true;
 	}
 	public static void SendEmail(string[] addresses, string subject, string body)
 	{
